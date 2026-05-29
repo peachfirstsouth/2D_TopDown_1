@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,6 +15,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Weapon weapon;
     [SerializeField] private Transform weaponTransform;
     [SerializeField] private float attackCooldown = 0.3f;
+    private bool isCharging;
+    private float chargeTime;
     public float AttackCooldown => attackCooldown;
 
     private Rigidbody2D rb;
@@ -43,6 +46,8 @@ public class PlayerController : MonoBehaviour
         float moveY = Input.GetAxisRaw("Vertical");
         moveInput = new Vector2(moveX, moveY).normalized;
 
+        moveInput = (isCharging ? Vector2.zero : moveInput);
+
         anim.SetFloat("vel", moveInput.sqrMagnitude);
 
         if (Time.time >= nextAttackTime)
@@ -58,10 +63,23 @@ public class PlayerController : MonoBehaviour
         float progress = (Time.time - lastAttackTime) / attackCooldown;
         energyBar.fillAmount = Mathf.Clamp01(progress);
 
-        if (Input.GetMouseButtonDown(0) && Time.time >= nextAttackTime && weapon != null)
+        chargeTime += Time.deltaTime;
+
+        if (Input.GetMouseButtonDown(0) && Time.time >= nextAttackTime && weapon != null && !isCharging)
         {
             anim.CrossFade("attack", 0.1f);
             ProcessAttackCombo();
+        }
+        else if (Input.GetMouseButtonDown(1) && Time.time >= nextAttackTime && weapon != null && !isCharging)
+        {
+            chargeTime = 0;
+            isCharging = true;
+            anim.CrossFade("charge", 0.1f);
+        }
+        else if (Input.GetMouseButtonUp(1) && isCharging)
+        {
+            isCharging = false;
+            anim.CrossFade("idle", 0.1f);
         }
     }
 
